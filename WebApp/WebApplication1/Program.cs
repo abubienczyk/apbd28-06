@@ -7,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 // rozwiazanie bledow
-builder.Services.AddScoped<AnimalRepository, AnimalRepository>();
+builder.Services.AddScoped<IAnimalRepository, AnimalRepository>();
+
 // dodac controllers
 builder.Services.AddControllers();
 var app = builder.Build();

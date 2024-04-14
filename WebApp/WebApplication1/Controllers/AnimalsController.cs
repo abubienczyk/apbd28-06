@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
+using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
 
@@ -9,60 +11,42 @@ namespace WebApplication1.Controllers;
 [Route("api/[controller]")]
 public class AnimalsController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
-
-    public AnimalsController(IConfiguration configuration)
+    
+    private readonly IAnimalRepository _animalRepository;
+    
+    public AnimalsController(IAnimalRepository animalRepository)
     {
-        _configuration = configuration;
+        _animalRepository = animalRepository;
     }
-
+    
     [HttpGet]
-    public IActionResult GetAnimals()
-    {   
-        
-        //otwieranie polaczenia --> using to samo co try, zamyka polaczenie 
-        using  SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("Default"));
-        conn.Open();
-        //definicja commanda 
-        using SqlCommand command = new SqlCommand();
-        command.Connection = conn;
-        command.CommandText = "SELECT * FROM Animal;";
-        //wykonanie
-        var reader = command.ExecuteReader();
-        var animals = new List<Animal>();
-        
-        // numery kolumn 
-        int idAnimalOrdinal = reader.GetOrdinal("IdAnimal");
-        int nameOrdinal = reader.GetOrdinal("Name");
-        
-        //odczytywanie z bazy
-        while (reader.Read())
-        {
-            animals.Add(new Animal()
-            {
-                //Name=reader["IdAnimal"].ToString()
-                IdAnimal = reader.GetInt32(idAnimalOrdinal),
-                Name=reader.GetString(nameOrdinal)
-            });
-        }
+    public IActionResult GetAnimals(string orderBy="name")
+    {
+        var animals = _animalRepository.GetAnimals();
+
         return Ok(animals);
     }
 
     [HttpPost]
     public IActionResult AddAnimal(AddAnimal animal)
     {
-         
-        //otwieranie polaczenia --> using to samo co try, zamyka polaczenie 
-        using  SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("Default"));
-        conn.Open();
-        //definicja commanda 
-        using SqlCommand command = new SqlCommand();
-        command.Connection = conn;
-        command.CommandText = "INSERT INTO Animal VALUES(@animalName,'','','')";
-        command.Parameters.AddWithValue("@animalName", animal.Name);
-        //wykonanie 
-        command.ExecuteNonQuery();
+        _animalRepository.AddAnimal(animal);
         
         return Created("", null);
+    }
+    //PUT --> aktualizacja
+    [HttpPut("{idAnimal}")]
+    public IActionResult UpdateAnimal( UpdateAnimal animal)
+    {
+        _animalRepository.UpdateAnimal(animal);
+        return Ok("sucess");
+    }
+
+    //DELETE /api/animals/{idAnimal}
+    [HttpDelete("{idAnimal}")]
+    public IActionResult DeleteAnimal(DeleteAnimal animal)
+    {
+        _animalRepository.DeleteAnimal(animal);
+        return Ok("sucess");
     }
 }
